@@ -24,7 +24,7 @@ Your task is to trigger requests for a list of client ID numbers, then query the
 ## Task Checklist
 
 - [ ] Prepare `ids.csv` from Excel
-- [ ] Get Auth0 token in Postman
+- [ ] Get Cognito token in Postman (ask senior for client_id and client_secret)
 - [ ] Create Astute request in Postman
 - [ ] Run Collection Runner for all IDs
 - [ ] Connect to dev Postgres in DBeaver
@@ -52,18 +52,19 @@ Save the file as `ids.csv` somewhere easy to find (e.g. your Desktop).
 
 ## Step 2 — Get an Auth Token in Postman
 
-Create a new **POST** request:
+The service validates tokens issued by **AWS Cognito** — not Auth0. The Auth0 token your senior shared is for calling the Data Platform directly and will return a 403 from this service.
 
-- **URL:** `https://auth.momentuminv-dev.co.za/oauth/token`
+Ask your senior for the Cognito `client_id` and `client_secret` for the dev environment, then create a new **POST** request:
+
+- **URL:** `https://invdev.auth.eu-west-1.amazoncognito.com/oauth2/token`
 - **Body:** `x-www-form-urlencoded`
 
 | Key | Value |
 |---|---|
 | `grant_type` | `client_credentials` |
-| `client_id` | `VzoeQuA4rplbYsR90coDgES5AJxwK5TS` |
-| `client_secret` | `usGSvmt-wniQP4hZ-PbIWk6AuqsS8sXuqe_ghDNGXOyUeok7nmLiIpZZdq-W-gGe` |
+| `client_id` | `<cognito_client_id>` |
+| `client_secret` | `<cognito_client_secret>` |
 | `scope` | `read:astute` |
-| `audience` | `api://dm-datamesh` |
 
 Send the request. Copy the `access_token` value from the response — you will use it in Step 3.
 
@@ -75,7 +76,7 @@ Send the request. Copy the `access_token` value from the response — you will u
 
 Create a new **POST** request inside the **same Postman Collection** as your token request:
 
-- **URL:** `https://internal-dev-investments.mmiholdings.com/astute/`
+- **URL:** `https://internal-dev-investments.mmiholdings.com/internal-service/astute/`
 - **Headers:**
 
 | Key | Value |
