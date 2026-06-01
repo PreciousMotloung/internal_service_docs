@@ -86,6 +86,37 @@ The service only accepts JWTs issued by **AWS Cognito** (`eu-west-1_P4Kyb2BGb`),
 
 ---
 
+## What Is the Data Platform and What Data Is Being Compared?
+
+### Data Platform — Not a Database
+
+The Data Platform is an **external REST API**, not a direct database connection. The service calls it via Spring `WebClient` (synchronous `.block()`) authenticating with OAuth2 client credentials (Auth0) plus a custom `audience` parameter configured in `OAuth2ClientConfig`.
+
+The comparison is therefore:
+> **Oracle** (direct DB — SQL/stored procedures returning nested XML) vs **Data Platform** (external REST API returning JSON)
+
+Both sources are expected to return the same portfolio data. The goal of the comparison logging is to validate parity before any cutover from Oracle to Data Platform.
+
+### Portfolio Data Fields Being Compared
+
+| Domain | Key Fields |
+|---|---|
+| **Holdings** | `CONTRACT_STATUS`, `INCEPTION_DATE`, `PP_MAS_INVESTMENT_VALUE`, `P_LIFE_TYPE`, `P_LEGAL_WRAP`, `P_CO_LICENSE`, fund info |
+| **Investor / Party** | `PP_FIRSTNAME`, `PP_NAME`, `PP_GENDER`, `PP_BIRTH_DATE`, `PP_TITLE`, address fields, `PP_CMS_NO` |
+| **Sub-Accounts / Funds** | Fund name, `AS_UNITS`, `AS_AMOUNT`, `AS_PRICE`, `AS_PERC`, currency |
+| **Two-Pot / Retirement** | `vested_amount`, `non_vested_amount`, `retirement_amount`, `savings_amount` |
+| **Withdrawals** | Annual withdrawal total, lifetime total, last withdrawal date |
+| **Arrangements** | Debit order type, amount, frequency, next execution date |
+
+### Structural Difference Between the Two Sources
+
+- **Oracle** — one stored proc/SQL call returns the entire portfolio as a single nested XML blob, parsed via JAXB
+- **Data Platform** — multiple fine-grained REST calls (`/astute/allHoldings`, `/astute/roleplayers`, `/astute/subAccounts2potComponents`, etc.) stitched together in `DataPlatformRepositoryBean`
+
+The Data Platform responses are reshaped back into the same Oracle/JAXB domain models before being returned, so the SOAP wire format to callers remains unchanged regardless of which source is used.
+
+---
+
 ## What Is Blocked
 
 Cannot trigger the endpoint without a valid Cognito token. The Cognito client credentials are stored in AWS Secrets Manager at:
